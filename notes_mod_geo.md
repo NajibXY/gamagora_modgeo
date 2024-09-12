@@ -35,3 +35,9 @@
 
 - Facettisation = discrètisation à partir d'une équation de surface.
 
+### TP 1
+
+- Liste de points et liste de triangles
+
+- GameObject : MeshRenderer, MeshFilter, Material
+
