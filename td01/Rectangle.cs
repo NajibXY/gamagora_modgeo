@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.PlayerLoop;
 using UnityEngine.SearchService;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 using static UnityEditor.Progress;
@@ -47,15 +48,21 @@ public class Rectangle : MonoBehaviour
 
         // Cylinder Mesh 
 
-        var cylinderMeshData = CylinderMesh(200, 800, 18);
+        /*        var cylinderMeshData = CylinderMesh(200, 800, 18);
 
-        mesh.vertices = cylinderMeshData.Item1;
-        mesh.triangles = cylinderMeshData.Item2.ToArray();
+                mesh.vertices = cylinderMeshData.Item1;
+                mesh.triangles = cylinderMeshData.Item2.ToArray();
 
-        foreach (object o in mesh.triangles)
-        {
-            print(o);
-        }
+                foreach (object o in mesh.triangles)
+                {
+                    print(o);
+                }
+        */
+        // Sphere Mesh
+        var sphereMesh = SphereMesh(12, 12);
+
+        mesh.vertices = sphereMesh.Item1;
+        mesh.triangles = sphereMesh.Item2.ToArray();
 
         print(mesh.triangles.Length);
     }
@@ -160,9 +167,62 @@ public class Rectangle : MonoBehaviour
         return (vertices, listTriangles);
     }
 
-    /*
-        // Update is called once per frame
-        void Update()
+
+    (Vector3[], List<int>) SphereMesh(int meridians, int parallels)
+    {
+        //todo size of vertices
+        Vector3[] vertices = new Vector3[meridians * parallels + 2];
+        List<int> listTriangles = new List<int>();
+
+        vertices[0] = new Vector3(0, 1, 0);
+
+        int count = 0;
+        for (int i = 0; i < parallels - 1; i++)
         {
-        }*/
+            float phi = MathF.PI * (i + 1) / parallels;
+            for (int j = 0; j < meridians; j++)
+            {
+                float theta = 2 * MathF.PI * j / meridians;
+                float x = MathF.Sin(phi) * MathF.Cos(theta);
+                float y = MathF.Cos(phi);
+                float z = MathF.Sin(phi) * MathF.Sin(theta);
+                vertices[count] = new Vector3(x, y, z);
+                count++;
+            }
+        }
+
+        vertices[vertices.Length - 1] = new Vector3(0, -1, 0);
+
+        // Bottom and top triangles
+        for (int i = 0; i < meridians; i++)
+        {
+            listTriangles.Add(0);
+            listTriangles.Add(((i + 1) % meridians) + 1);
+            listTriangles.Add(i + 1);
+            listTriangles.Add(vertices.Length - 1);
+            listTriangles.Add(i + (parallels - 2) * meridians + 1);
+            listTriangles.Add(((i + 1) % meridians) + (parallels - 2) * meridians + 1);
+        }
+        // Add triangles per parallele and meridian
+        for (int i = 0; i < parallels - 2; i++)
+        {
+            for (int j = 0; j < meridians; j++)
+            {
+                listTriangles.Add(j + i * meridians + 1);
+                listTriangles.Add(((j + 1) % meridians) + i * meridians + 1);
+                listTriangles.Add(j + ((i + 1) % parallels) * meridians + 1);
+
+                listTriangles.Add(((j + 1) % meridians) + i * meridians + 1);
+                listTriangles.Add(((j + 1) % meridians) + ((i + 1) % parallels) * meridians + 1);
+                listTriangles.Add(j + ((i + 1) % parallels) * meridians + 1);
+            }
+        }
+
+        return (vertices, listTriangles);
+    }
+        /*
+            // Update is called once per frame
+            void Update()
+            {
+            }*/
 }
