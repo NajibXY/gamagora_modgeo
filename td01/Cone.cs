@@ -18,8 +18,6 @@ public class Cone : MonoBehaviour
     void Start()
     {
         // Init Mesh components
-        gameObject.AddComponent<MeshFilter>();
-        gameObject.AddComponent<MeshRenderer>();
         gameObject.GetComponent<MeshRenderer>();
         Mesh mesh = GetComponent<MeshFilter>().mesh;
 
@@ -49,7 +47,7 @@ public class Cone : MonoBehaviour
             vertices[i + 1] = new Vector3(x, 0, z);
         }
 
-        // Base
+        // Base Center
         vertices[vertices.Length - 1] = new Vector3(0, 0, 0);
 
         // Side triangles

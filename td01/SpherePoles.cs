@@ -18,8 +18,6 @@ public class SpherePoles : MonoBehaviour
     void Start()
     {
         // Init Mesh components
-        gameObject.AddComponent<MeshFilter>();
-        gameObject.AddComponent<MeshRenderer>();
         gameObject.GetComponent<MeshRenderer>();
         Mesh mesh = GetComponent<MeshFilter>().mesh;
 

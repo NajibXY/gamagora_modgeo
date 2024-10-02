@@ -18,8 +18,6 @@ public class Cylinder : MonoBehaviour
     void Start()
     {
         // Init Mesh components
-        gameObject.AddComponent<MeshFilter>();
-        gameObject.AddComponent<MeshRenderer>();
         gameObject.GetComponent<MeshRenderer>();
         Mesh mesh = GetComponent<MeshFilter>().mesh;
 
@@ -36,7 +34,7 @@ public class Cylinder : MonoBehaviour
     // Cylinder Mesh
     (Vector3[], List<int>) CylinderMesh(float r, float h, int m)
     {
-        //todo size of vertices
+        //size of vertices
         Vector3[] vertices = new Vector3[m * 2 + 2];
         List<int> listTriangles = new List<int>();
 
