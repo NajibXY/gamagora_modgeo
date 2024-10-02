@@ -1,7 +1,7 @@
 # TP 1
 
 - Pour visualiser les différents éléménts, il faut créer des Empty Objects dans sa scène et affecter chacun des Scripts à la forme associée.
-- Chaque fonction renvoie un tablleau de Vector3 pour les vertices et une Liste d'int pour 
+- Chaque fonction renvoie un tableau de Vector3 pour les vertices et une Liste d'int pour les triangles.
 
 ## Plan
 
