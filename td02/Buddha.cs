@@ -18,20 +18,22 @@ public class Buddha : MonoBehaviour
         mesh.Clear();
 
 
-        var buddha = LoadPath("Assets/Mesh/buddha.off");
+        string name = "bunny.off";
+
+        var buddha = LoadPath("Assets/Mesh/" + name);
 
         mesh.vertices = buddha.Item1;
         mesh.triangles = buddha.Item2.ToArray();
         mesh.normals = buddha.Item3.ToArray();
 
-        WriteOnPath("Assets/Mesh/", "buddha.obj", mesh.vertices, mesh.triangles, mesh.normals);
+        WriteOnPath("Assets/Mesh/", name.Split('.')[0]+".obj", mesh.vertices, mesh.triangles, mesh.normals);
     }
 
     void WriteOnPath(string path, string name, Vector3[] vertices, int[] triangles, Vector3[] normals)
     {
         using (StreamWriter outputFile = new StreamWriter(Path.Combine(path, name)))
         {
-            outputFile.WriteLine("# " + name.Split(' ')[0]);
+            outputFile.WriteLine("# " + name.Split('.')[0]);
 
             outputFile.WriteLine("########################### VERTICES ###########################");
 
