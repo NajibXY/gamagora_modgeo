@@ -41,3 +41,14 @@
 
 - GameObject : MeshRenderer, MeshFilter, Material
 
+### ... Modélisations surfaciques, maillage ...
+
+### Voxelisation et surface volumique
+
+- Modèles volumiques :
+	- Octree régulier : découpage égal
+	- Octree adaptatif : découpage irrégulier
+		- Plus on approche de la surface/bords plus on peut avoir de découpage, pour l'opti
+ 		- Hierarchisation et affichage à différentes résolutions vs coût de stockage
+ 	- Arbres Constructive Solid Geometry 
+ 		- Utilisation des opérateurs Union, Intersect, Minus pour générer des volumes
