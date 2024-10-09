@@ -1,7 +1,7 @@
 # TP 1
 
 - Pour visualiser les différents éléménts, il faut créer des Empty Objects dans sa scène et affecter chacun des Scripts à la forme associée.
-- Chaque fonction renvoie un tablleau de Vector3 pour les vertices et une Liste d'int pour 
+- Chaque fonction renvoie un tableau de Vector3 pour les vertices et une Liste d'int pour les triangles.
 
 ## Plan
 
@@ -64,7 +64,7 @@
 - Génère les vertices en parsant les valeur flottantes avec le paramètre CultureInfo.InvariantCulture (très important)
 - Elle calcule la plus grande valeur de Vector3 des vertices pour la normalisation de tous les vertices
 - Elle calcule également la moyenne de Vector3 des vertices pour définir le centre de gravité de l'objet et décale tous les vertices en conséquence
-- En même temps elle intègres les différentes données des triangles, tout en calculant la normale via une accumulation de produits vectoriels.
+- En même temps elle intègre les différentes données des triangles, tout en calculant la normale via une accumulation de produits vectoriels.
 - A la fin elle normalise les normales de chaque sommet et renvoie le tout sous la forme d'un triplet {vertices, listTriangles, normalizedNormals}
 
 <img src="https://github.com/NajibXY/gamagora_modgeo/blob/main/img/bunny_read.png" width="600">
@@ -74,7 +74,7 @@
 - Cette fonction WriteOnPath(string path, string name, Vector3[] vertices, int[] triangles, Vector3[] normals) prend en entrée le chemin et le nom de du Mesh à écrire sous format .obj
 - Elle transcript les données de vertices du mesh initial sous le format "v {0} {1} {2}"
 - Ainsi que les données de normales "vn {0} {1} {2}"
-- Puis les triangles sous le format d'indexage "f index_1//index_1 index_2//index_2 index_3//index_3". Le mapping entre les index et le tableau de vertices et de normales initiaux se fait naturellement.
+- Puis les triangles sous le format d'indexage "f index_1//index_1 index_2//index_2 index_3//index_3". Le mapping entre les index et les tableaux de vertices et de normales initiaux se fait naturellement.
 
 <img src="https://github.com/NajibXY/gamagora_modgeo/blob/main/img/bunny_write.png" width="600">
 <img src="https://github.com/NajibXY/gamagora_modgeo/blob/main/img/buddha_write.png" width="600">
