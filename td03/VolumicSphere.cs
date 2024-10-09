@@ -32,7 +32,7 @@ public class VolumicSphere : MonoBehaviour
                 mesh.triangles = myMesh.Item2.ToArray();
 
         // Sphere Vox
-        SphereVox(1.0f, 1.0f, new Vector3(0.0f,0.0f,0.0f));
+        SphereVox(0.5f, 1.0f, new Vector3(0.0f,0.0f,0.0f));
     }
 
     (Vector3[], List<int>) SphereMesh(int meridians, int parallels)
@@ -111,7 +111,7 @@ public class VolumicSphere : MonoBehaviour
         UnityEngine.Debug.Log("diametre : " + diametre);
         OctreeRegular octreeReg =
             new OctreeRegular(
-                new Vector3(-diametre / 2, -diametre / 2, -diametre / 2), 
+                new Vector3(-diametre / 2, - diametre / 2, - diametre / 2), 
                 new Vector3(diametre / 2, diametre / 2, diametre / 2),
                 sphereRadius, precision, sphereCenter
             );
@@ -242,7 +242,16 @@ public class VolumicSphere : MonoBehaviour
             UnityEngine.Debug.Log("node amplitude : " + node.Distance(node.min, node.max));
             //if (node.isFull & node.Distance(node.min, node.max) <= precision)
             UnityEngine.Debug.Log("Cube side size : " + node.CalculateSideSize());
-            if (node.isFull & node.CalculateSideSize() <= precision)
+
+
+            // Define which are the leafs to display
+
+            /*if (node.isFull & node.CalculateSideSize() <= precision)
+            {
+                UnityEngine.Debug.Log(node.Distance(node.min, node.max));
+                node.isLeaf = true;
+            }*/
+            if (node.CalculateSideSize() <= precision)
             {
                 UnityEngine.Debug.Log(node.Distance(node.min, node.max));
                 node.isLeaf = true;
@@ -250,25 +259,42 @@ public class VolumicSphere : MonoBehaviour
             else
             {
                 node.isLeaf = false;
-                //divide into 4 children
+
+                //divide into 8 children
                 Vector3 center = node.GetCenterCube();
                 node.children.Add(new Cube(node.min, center, false, false, false));
-                /*node.children.Add(new Cube(new Vector3(node.min.x, node.min.y, node.min.z + (node.max.z - node.min.z) / 2), new Vector3(node.max.x, node.max.y, node.max.z), false, false, false));
-                node.children.Add(new Cube(new Vector3(node.min.x, node.min.y + (node.max.y - node.min.y) / 2, node.min.z), new Vector3(node.max.x, node.max.y, node.max.z), false, false, false));
-                node.children.Add(new Cube(new Vector3(node.min.x, node.min.y + (node.max.y - node.min.y) / 2, node.min.z + (node.max.z - node.min.z) / 2), new Vector3(node.max.x, node.max.y, node.max.z), false, false, false));
-                */
-                //todo check if the 4 children are correct
                 node.children.Add(new Cube(center, node.max, false, false, false));
                 node.children.Add(new Cube(
-                    new Vector3(node.min.x, node.min.y + (node.max.y - node.min.y) / 2, node.min.z + (node.max.z - node.min.z) / 2),
-                    new Vector3(node.min.x, node.max.y, node.max.z - (node.max.z - node.min.z) / 2),
+                    new Vector3(node.min.x, center.y, node.min.z),
+                    new Vector3(center.x, center.y + (node.max.y - node.min.y) / 2, center.z),
                     false, false, false)
+                );
+                node.children.Add(new Cube(
+                    new Vector3(node.min.x + (node.max.x - node.min.x) / 2, node.min.y, node.min.z),
+                    new Vector3(center.x + (node.max.x - node.min.x) / 2, center.y, center.z),
+                    false, false, false)
+                );
+                node.children.Add(new Cube(
+                    new Vector3(center.x, center.y, center.z - (node.max.z - node.min.z) / 2),
+                    new Vector3(node.max.x, node.max.y, node.max.z - (node.max.z - node.min.z) / 2),
+                    false, false, false)
+                );
+                node.children.Add(new Cube(
+                    new Vector3(node.min.x + (node.max.x - node.min.x) / 2, node.min.y, node.min.z + (node.max.z - node.min.z) / 2),
+                    new Vector3(center.x + (node.max.x - node.min.x) / 2, center.y, center.z + (node.max.z - node.min.z) / 2),
+                    false, false, false)
+                );
+                node.children.Add(new Cube(
+                    new Vector3(center.x - (node.max.x - node.min.x) / 2, center.y , center.z),
+                    new Vector3(node.max.x - (node.max.x - node.min.x) / 2, node.max.y, node.max.z)
+                    , false, false, false)
                 );
                 node.children.Add(new Cube(
                     new Vector3(node.min.x, node.min.y, node.min.z + (node.max.z - node.min.z) / 2),
-                    new Vector3(center.x, center.y, center.z + (node.max.z - node.min.z) / 2),
-                    false, false, false)
+                    new Vector3(center.x, center.y, center.z + (node.max.z - node.min.z) / 2)
+                    , false, false, false)
                 );
+
                 foreach (Cube child in node.children)
                 {
                     CalculateNodes(child);
