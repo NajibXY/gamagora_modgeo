@@ -32,7 +32,7 @@ public class VolumicSphere : MonoBehaviour
                 mesh.triangles = myMesh.Item2.ToArray();
 
         // Sphere Vox
-        SphereVox(0.5f, 1.0f, new Vector3(0.0f,0.0f,0.0f));
+        SphereVox(0.5f, 1.0f, new Vector3(0.0f,0.0f,0.0f), true);
     }
 
     (Vector3[], List<int>) SphereMesh(int meridians, int parallels)
@@ -105,7 +105,7 @@ public class VolumicSphere : MonoBehaviour
     }
 
 
-    void SphereVox(float precision, float sphereRadius, Vector3 sphereCenter)
+    void SphereVox(float precision, float sphereRadius, Vector3 sphereCenter, bool onlySecant)
     {
         float diametre = sphereRadius * 2;
         UnityEngine.Debug.Log("diametre : " + diametre);
@@ -118,46 +118,37 @@ public class VolumicSphere : MonoBehaviour
 
         // lvl 0
         octreeReg.CalculateNodes(octreeReg.root);
-
-        // Draw - todo use secant ?
-        //
-        DrawCube(octreeReg.root, precision);
-
-
-        /*        // Create cubes representing the sphere
-                Vector3 scaleVox = new Vector3(1f / subdivisions, 1f / subdivisions, 1f / subdivisions);
-                for (int i = 0; i < subdivisions; i++)
-                {
-                    for (int j = 0; j < subdivisions; j++)
-                    {
-                        for (int k = 0; k < subdivisions; k++)
-                        {
-                            float x = (float)i / (float)subdivisions;
-                            float y = (float)j / (float)subdivisions;
-                            float z = (float)k / (float)subdivisions;
-
-                            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
-                            cube.transform.position = new Vector3(x, y, z);
-                            cube.transform.localScale = scaleVox;
-
-                        }
-                    }
-                }*/
+        DrawCube(octreeReg.root, precision, onlySecant);
     }
 
-    void DrawCube(Cube node, float precision)
+    void DrawCube(Cube node, float precision, bool onlySecant)
     {
         if (node.isLeaf)
         {
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = node.GetCenterCube() ;
-            cube.transform.localScale = new Vector3(precision, precision, precision);
+            UnityEngine.Debug.Log("Cube " + node.isLeaf + " " + node.isSecante + " " + node.isFull);
+            if (onlySecant)
+            {
+                if (!node.isFull && node.isSecante)
+                {
+                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    cube.transform.position = node.GetCenterCube();
+                    cube.transform.localScale = new Vector3(precision, precision, precision);
+                }
+            }
+            else
+            {
+                if (node.isFull || node.isSecante)
+                {
+                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    cube.transform.position = node.GetCenterCube();
+                    cube.transform.localScale = new Vector3(precision, precision, precision);
+                }
+            }
         } else
         {
             foreach (Cube child in node.children)
             {
-                DrawCube(child, precision);
+                DrawCube(child, precision, onlySecant);
             }
         }
         
@@ -200,18 +191,63 @@ public class VolumicSphere : MonoBehaviour
             return MathF.Sqrt(MathF.Pow(a.x - b.x, 2) + MathF.Pow(a.y - b.y, 2) + MathF.Pow(a.z - b.z, 2));
         }
 
-        public bool IsInSphere(Vector3 point, float radius)
-        {
-            float distanceWithCenter = Distance(point, new Vector3(0, 0, 0));
-            //todo check if distance is correct
-            UnityEngine.Debug.Log("distance with center : " + distanceWithCenter);
-            UnityEngine.Debug.Log(Math.Abs(radius - distanceWithCenter) <= 0.001f);
-            return Math.Abs(radius-distanceWithCenter) <= 0.001f;
-        }
-
         public float CalculateSideSize()
         {
             return Distance(min, max) / MathF.Sqrt(3) ;
+        }
+
+        public bool IsInSphere(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius)
+        {
+            // Half the side length of the cube
+            float halfSideLength = cubeSideLength / 2;
+
+            // List of cube vertices relative to the cube center
+            Vector3[] vertices = new Vector3[8];
+            vertices[0] = new Vector3(cubeCenter.x - halfSideLength, cubeCenter.y - halfSideLength, cubeCenter.z - halfSideLength);
+            vertices[1] = new Vector3(cubeCenter.x + halfSideLength, cubeCenter.y - halfSideLength, cubeCenter.z - halfSideLength);
+            vertices[2] = new Vector3(cubeCenter.x - halfSideLength, cubeCenter.y + halfSideLength, cubeCenter.z - halfSideLength);
+            vertices[3] = new Vector3(cubeCenter.x + halfSideLength, cubeCenter.y + halfSideLength, cubeCenter.z - halfSideLength);
+            vertices[4] = new Vector3(cubeCenter.x - halfSideLength, cubeCenter.y - halfSideLength, cubeCenter.z + halfSideLength);
+            vertices[5] = new Vector3(cubeCenter.x + halfSideLength, cubeCenter.y - halfSideLength, cubeCenter.z + halfSideLength);
+            vertices[6] = new Vector3(cubeCenter.x - halfSideLength, cubeCenter.y + halfSideLength, cubeCenter.z + halfSideLength);
+            vertices[7] = new Vector3(cubeCenter.x + halfSideLength, cubeCenter.y + halfSideLength, cubeCenter.z + halfSideLength);
+
+            // Check if all vertices are inside the sphere
+            foreach (Vector3 vertex in vertices)
+            {
+                // Calculate the distance from the sphere center to the vertex
+                float distanceSquared = (vertex.x - sphereCenter.x) * (vertex.x - sphereCenter.x)
+                                      + (vertex.y - sphereCenter.y) * (vertex.y - sphereCenter.y)
+                                      + (vertex.z - sphereCenter.z) * (vertex.z - sphereCenter.z);
+
+                // If any vertex is outside the sphere, return false
+                if (distanceSquared > sphereRadius * sphereRadius)
+                {
+                    return false;
+                }
+            }
+
+            // If all vertices are inside the sphere, return true
+            return true;
+        }
+
+        public bool IsSecante(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius)
+        {
+            // Half the side length of the cube
+            float halfSideLength = cubeSideLength / 2;
+
+            // Find the closest point on the cube to the sphere center
+            float closestx = Math.Max(cubeCenter.x - halfSideLength, Math.Min(sphereCenter.x, cubeCenter.x + halfSideLength));
+            float closesty = Math.Max(cubeCenter.y - halfSideLength, Math.Min(sphereCenter.y, cubeCenter.y + halfSideLength));
+            float closestz = Math.Max(cubeCenter.z - halfSideLength, Math.Min(sphereCenter.z, cubeCenter.z + halfSideLength));
+
+            // Calculate the distance between the closest point on the cube and the center of the sphere
+            float distanceSquared = (closestx - sphereCenter.x) * (closestx - sphereCenter.x)
+                                  + (closesty - sphereCenter.y) * (closesty - sphereCenter.y)
+                                  + (closestz - sphereCenter.z) * (closestz - sphereCenter.z);
+
+            // Check if the distance is less than or equal to the radius of the sphere squared
+            return distanceSquared <= (sphereRadius * sphereRadius);
         }
     }
 
@@ -237,7 +273,9 @@ public class VolumicSphere : MonoBehaviour
         {
             UnityEngine.Debug.Log("On calcule des gosses");
             UnityEngine.Debug.Log("Center : " + node.GetCenterCube());
-            node.isFull = node.IsInSphere(node.GetCenterCube(), sphereRadius);
+            node.isFull = node.IsInSphere(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
+            node.isSecante = node.IsSecante(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
+
 
             UnityEngine.Debug.Log("node amplitude : " + node.Distance(node.min, node.max));
             //if (node.isFull & node.Distance(node.min, node.max) <= precision)

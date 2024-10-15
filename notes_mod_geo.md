@@ -52,3 +52,6 @@
  		- Hierarchisation et affichage à différentes résolutions vs coût de stockage
  	- Arbres Constructive Solid Geometry 
  		- Utilisation des opérateurs Union, Intersect, Minus pour générer des volumes
+ 	- Surfaces implicites discrètes
+ 		- Potentiel par voxel (affichage en fonction du potentiel par exemple)
+ 	- Marching cube
