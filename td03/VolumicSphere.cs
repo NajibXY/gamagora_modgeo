@@ -16,6 +16,9 @@ using static UnityEditor.Progress;
 public class VolumicSphere : MonoBehaviour
 {
     // Start is called before the first frame update
+    public float precision;
+    public float radius;
+    public bool onlySecant;
 
     void Start()
     {
@@ -26,13 +29,14 @@ public class VolumicSphere : MonoBehaviour
         mesh.Clear();
 
         // Sphere Mesh
-                var myMesh = SphereMesh(12, 12);
+        var myMesh = SphereMesh(12, 12);
 
-                mesh.vertices = myMesh.Item1;
-                mesh.triangles = myMesh.Item2.ToArray();
+        mesh.vertices = myMesh.Item1;
+        mesh.triangles = myMesh.Item2.ToArray();
 
         // Sphere Vox
-        SphereVox(0.5f, 1.0f, new Vector3(0.0f,0.0f,0.0f), true);
+        UnityEngine.Debug.Log(gameObject.transform.position);
+        SphereVox(precision, radius, gameObject.transform.position, onlySecant);
     }
 
     (Vector3[], List<int>) SphereMesh(int meridians, int parallels)
@@ -107,12 +111,10 @@ public class VolumicSphere : MonoBehaviour
 
     void SphereVox(float precision, float sphereRadius, Vector3 sphereCenter, bool onlySecant)
     {
-        float diametre = sphereRadius * 2;
-        UnityEngine.Debug.Log("diametre : " + diametre);
         OctreeRegular octreeReg =
             new OctreeRegular(
-                new Vector3(-diametre / 2, - diametre / 2, - diametre / 2), 
-                new Vector3(diametre / 2, diametre / 2, diametre / 2),
+                new Vector3(-sphereRadius, -sphereRadius, -sphereRadius) + sphereCenter, 
+                new Vector3(sphereRadius, sphereRadius, sphereRadius) + sphereCenter,
                 sphereRadius, precision, sphereCenter
             );
 
@@ -125,7 +127,6 @@ public class VolumicSphere : MonoBehaviour
     {
         if (node.isLeaf)
         {
-            UnityEngine.Debug.Log("Cube " + node.isLeaf + " " + node.isSecante + " " + node.isFull);
             if (onlySecant)
             {
                 if (!node.isFull && node.isSecante)
@@ -170,7 +171,6 @@ public class VolumicSphere : MonoBehaviour
             this.min = min;
             this.max = max;
             this.isFull = isFull;
-            //todo How to use isSecante ?
             this.isSecante = isSecante;
             this.isLeaf = isLeaf;
         }
@@ -271,27 +271,11 @@ public class VolumicSphere : MonoBehaviour
 
         public void CalculateNodes(Cube node)
         {
-            UnityEngine.Debug.Log("On calcule des gosses");
-            UnityEngine.Debug.Log("Center : " + node.GetCenterCube());
             node.isFull = node.IsInSphere(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
             node.isSecante = node.IsSecante(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
 
-
-            UnityEngine.Debug.Log("node amplitude : " + node.Distance(node.min, node.max));
-            //if (node.isFull & node.Distance(node.min, node.max) <= precision)
-            UnityEngine.Debug.Log("Cube side size : " + node.CalculateSideSize());
-
-
-            // Define which are the leafs to display
-
-            /*if (node.isFull & node.CalculateSideSize() <= precision)
-            {
-                UnityEngine.Debug.Log(node.Distance(node.min, node.max));
-                node.isLeaf = true;
-            }*/
             if (node.CalculateSideSize() <= precision)
             {
-                UnityEngine.Debug.Log(node.Distance(node.min, node.max));
                 node.isLeaf = true;
             }
             else
