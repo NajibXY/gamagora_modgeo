@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.PlayerLoop;
@@ -14,8 +15,7 @@ using UnityEngine.UIElements;
 using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 using static UnityEditor.Progress;
 
-public class VolumicSphere : MonoBehaviour
-{
+public class VolumicSphere : MonoBehaviour {
     // Start is called before the first frame update
     public float precision;
     public float radius;
@@ -28,8 +28,7 @@ public class VolumicSphere : MonoBehaviour
 
     private List<float> radiuses;
     private List<Vector3> centers;
-    void Start()
-    {
+    void Start() {
         radiuses = new List<float>();
         centers = new List<Vector3>();
 
@@ -45,41 +44,32 @@ public class VolumicSphere : MonoBehaviour
         mesh.vertices = myMesh.Item1;
         mesh.triangles = myMesh.Item2.ToArray();
 
-        if (isForOperandsTests)
-        {
+        if (isForOperandsTests) {
             /*          UnityEngine.Debug.Log(otherSpheres[0].getSphereCenter());
                         SphereVox(precision, radius, otherSpheres[0].getSphereCenter(), onlySecant);*/
 
             centers.Add(gameObject.transform.position);
             radiuses.Add(radius);
-            foreach (SphereComplete sc in otherSpheres)
-            {
+            foreach (SphereComplete sc in otherSpheres) {
                 centers.Add(sc.getSphereCenter());
                 radiuses.Add(sc.getRadius());
             }
 
-            if (isUnion)
-            {
+            if (isUnion) {
                 List<Cube> unionList = UnionSphereVox(precision, radiuses, centers, onlySecant);
                 DrawPrimitiveCubesList(unionList, precision);
-            }
-            else if (isIntersect)
-            {
+            } else if (isIntersect) {
                 List<Cube> interesectList = IntersectSphereVox(precision, radiuses, centers, onlySecant);
                 DrawPrimitiveCubesList(interesectList, precision);
             }
-        }
-        else
-        {
+        } else {
             // Sphere Vox
             SphereVox(precision, radius, gameObject.transform.position, onlySecant);
         }
     }
 
-    void DrawPrimitiveCubesList(List<Cube> cubes, float precision)
-    {
-        foreach (Cube cube in cubes)
-        {
+    void DrawPrimitiveCubesList(List<Cube> cubes, float precision) {
+        foreach (Cube cube in cubes) {
             GameObject cubePrimitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cubePrimitive.transform.position = cube.GetCenterCube();
             cubePrimitive.transform.localScale = new Vector3(precision, precision, precision);
@@ -87,11 +77,9 @@ public class VolumicSphere : MonoBehaviour
     }
 
     //todo FIIIIIIIIX
-    List<Cube> IntersectSphereVox(float precision, List<float> sphereRadiuses, List<Vector3> sphereCenters, bool onlySecant)
-    {
+    List<Cube> IntersectSphereVox(float precision, List<float> sphereRadiuses, List<Vector3> sphereCenters, bool onlySecant) {
         List<List<Cube>> allLists = new List<List<Cube>>();
-        for (int i = 0; i < sphereRadiuses.Count; i++)
-        {
+        for (int i = 0; i < sphereRadiuses.Count; i++) {
             UnityEngine.Debug.Log("sphere radius : " + sphereRadiuses[i]);
             OctreeRegular octreeReg =
                 new OctreeRegular(
@@ -108,25 +96,18 @@ public class VolumicSphere : MonoBehaviour
 
         var intersectCubes = new HashSet<Cube>(allLists[0]);
         List<Cube> intersectList = intersectCubes.ToList();
-        //UnityEngine.Debug.Log("Ité liste 0 : " + unionCubes.Count);
 
-        for (int i = 1; i < allLists.Count; i++)
-        {
-            var otherList = new HashSet<Cube>(allLists[i]);
+        for (int i = 1; i < allLists.Count; i++) {
             // Intersection
-            intersectList = FindCommonCubes(intersectList, otherList.ToList());
-            UnityEngine.Debug.Log("Ité liste " + i + " : " + intersectCubes.Count);
+            intersectList = FindCommonCubes(intersectList, sphereRadiuses[i], sphereCenters[i]);
         }
 
         return intersectList;
     }
 
-    List<Cube> UnionSphereVox(float precision, List<float> sphereRadiuses, List<Vector3> sphereCenters, bool onlySecant)
-    {
-        List<List<Cube>> allLists = new List<List<Cube>>();
-        for (int i = 0; i < sphereRadiuses.Count; i++)
-        {
-            //UnityEngine.Debug.Log("sphere radius : " + sphereRadiuses[i]);
+    List<Cube> UnionSphereVox(float precision, List<float> sphereRadiuses, List<Vector3> sphereCenters, bool onlySecant) {
+        List<Cube> allCubes = new List<Cube>();
+        for (int i = 0; i < sphereRadiuses.Count; i++) {
             OctreeRegular octreeReg =
                 new OctreeRegular(
                     new Vector3(-sphereRadiuses[i], -sphereRadiuses[i], -sphereRadiuses[i]) + sphereCenters[i],
@@ -137,59 +118,66 @@ public class VolumicSphere : MonoBehaviour
             // lvl 0
             octreeReg.CalculateNodes(octreeReg.root);
             List<Cube> listeCubes = GetCubes(octreeReg.root, precision, onlySecant);
-            allLists.Add(listeCubes);
+            allCubes.AddRange(listeCubes);
         }
 
-        var unionCubes = new HashSet<Cube>(allLists[0]);
-        //UnityEngine.Debug.Log("Ité liste 0 : " + unionCubes.Count);
+        //List<Cube> unionList = new List<Cube>();
 
-        for (int i = 1; i < allLists.Count; i++)
-        {
-            List<Cube> list = allLists[i];
-            foreach (Cube cube in list)
-            {
-                if (!unionCubes.Contains(cube))
-                {
-                    unionCubes.Add(cube);
-                }
+        //for (int j = 0; j < allLists.Count; j++) {
+        //    var firstList = new HashSet<Cube>(allLists[j]);
+        //    for (int i = 0; i < allLists.Count; i++) {
+        //        if (i != j) {
+        //            List<Cube> nonCommonCubes = ExcludeCommonCubes(firstList.ToList(), sphereRadiuses[i], sphereCenters[i]);
+        //            foreach (Cube cube in nonCommonCubes) {
+        //                if (!unionList.Contains(cube)) {
+        //                    unionList.Add(cube);
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        UnityEngine.Debug.Log("All cubes List size : " + allCubes.Count);
+        return ExcludeCommonCubes(allCubes, IntersectSphereVox(precision, sphereRadiuses, sphereCenters, onlySecant));
+    }
+
+    static List<Cube> ExcludeCommonCubes(List<Cube> list, List<Cube> common) {
+        List<Cube> exclusiveUnion = list.Except(common).ToList();
+        UnityEngine.Debug.Log("Union size : " + exclusiveUnion.Count);
+        return exclusiveUnion;
+    }
+
+    static List<Cube> FindCommonCubes(List<Cube> list1, float otherRadius, Vector3 otherCenter) {
+        List<Cube> commonCubes = new List<Cube>();
+        for (int i = 0; i < list1.Count; i++) {
+            Cube cube = list1[i];
+            if ((cube.IsInSphere(cube.GetCenterCube(), cube.CalculateSideSize(), otherCenter, otherRadius)
+            || cube.IsSecante(cube.GetCenterCube(), cube.CalculateSideSize(), otherCenter, otherRadius))
+            && !commonCubes.Contains(cube)) {
+                commonCubes.Add(cube);
             }
-            //UnityEngine.Debug.Log("Ité liste " + i + " : " + unionCubes.Count);
         }
-
-        return unionCubes.ToList();
+        if (commonCubes.Count == 0) {
+            UnityEngine.Debug.Log("No common cubes found");
+        }
+        return commonCubes;
     }
 
-    static List<Cube> FindCommonCubes(List<Cube> list1, List<Cube> list2)
-    {
-        var commonCubes = new HashSet<Cube>(list1.Intersect(list2));
-        return commonCubes.ToList();
-    }
-
-    List<Cube> GetCubes(Cube node, float precision, bool onlySecant)
-    {
+    List<Cube> GetCubes(Cube node, float precision, bool onlySecant) {
         List<Cube> listeCubes = new List<Cube>();
 
-        if (node.isLeaf)
-        {
-            if (onlySecant)
-            {
-                if (!node.isFull && node.isSecante)
-                {
+        if (node.isLeaf) {
+            if (onlySecant) {
+                if (!node.isFull && node.isSecante) {
+                    listeCubes.Add(node);
+                }
+            } else {
+                if (node.isFull || node.isSecante) {
                     listeCubes.Add(node);
                 }
             }
-            else
-            {
-                if (node.isFull || node.isSecante)
-                {
-                    listeCubes.Add(node);
-                }
-            }
-        }
-        else
-        {
-            foreach (Cube child in node.children)
-            {
+        } else {
+            foreach (Cube child in node.children) {
                 listeCubes.AddRange(GetCubes(child, precision, onlySecant));
             }
         }
@@ -199,47 +187,41 @@ public class VolumicSphere : MonoBehaviour
     }
 
 
-    (Vector3[], List<int>) SphereMesh(int meridians, int parallels)
-    {
+    (Vector3[], List<int>) SphereMesh(int meridians, int parallels) {
         // Vertices: (meridians * (parallels - 1)) + 2 (for poles)
         Vector3[] vertices = new Vector3[meridians * (parallels - 1) + 2];
         List<int> listTriangles = new List<int>();
 
         // Top pole
-        vertices[0] = new Vector3(0, 1f, 0);
+        vertices[0] = new Vector3(0, radius, 0);
 
         int count = 1;
         // Generate vertices for each parallel
-        for (int i = 0; i < parallels - 1; i++)
-        {
+        for (int i = 0; i < parallels - 1; i++) {
             float phi = MathF.PI * (i + 1) / parallels;
-            for (int j = 0; j < meridians; j++)
-            {
+            for (int j = 0; j < meridians; j++) {
                 float theta = 2 * MathF.PI * j / meridians;
-                float x = MathF.Sin(phi) * MathF.Cos(theta);
-                float y = MathF.Cos(phi);
-                float z = MathF.Sin(phi) * MathF.Sin(theta);
+                float x = MathF.Sin(phi) * MathF.Cos(theta) * radius;
+                float y = MathF.Cos(phi) * radius;
+                float z = MathF.Sin(phi) * MathF.Sin(theta) * radius;
                 vertices[count] = new Vector3(x, y, z);
                 count++;
             }
         }
 
         // Bottom pole
-        vertices[vertices.Length - 1] = new Vector3(0, -1f, 0);
+        vertices[vertices.Length - 1] = new Vector3(0, -radius, 0);
 
         // Top pole triangles
-        for (int i = 0; i < meridians; i++)
-        {
+        for (int i = 0; i < meridians; i++) {
             listTriangles.Add(0);
             listTriangles.Add(i + 1);
             listTriangles.Add((i + 1) % meridians + 1);
         }
 
         // Middle triangles between excluding poles
-        for (int i = 0; i < parallels - 2; i++)
-        {
-            for (int j = 0; j < meridians; j++)
-            {
+        for (int i = 0; i < parallels - 2; i++) {
+            for (int j = 0; j < meridians; j++) {
                 int current = j + i * meridians + 1;
                 int next = (j + 1) % meridians + i * meridians + 1;
                 int below = j + (i + 1) * meridians + 1;
@@ -258,8 +240,7 @@ public class VolumicSphere : MonoBehaviour
         }
 
         // Bottom pole triangles
-        for (int i = 0; i < meridians; i++)
-        {
+        for (int i = 0; i < meridians; i++) {
             listTriangles.Add(vertices.Length - 1); // Bottom pole vertex
             listTriangles.Add((i + 1) % meridians + (parallels - 2) * meridians + 1);
             listTriangles.Add(i + (parallels - 2) * meridians + 1);
@@ -269,8 +250,7 @@ public class VolumicSphere : MonoBehaviour
     }
 
 
-    void SphereVox(float precision, float sphereRadius, Vector3 sphereCenter, bool onlySecant)
-    {
+    void SphereVox(float precision, float sphereRadius, Vector3 sphereCenter, bool onlySecant) {
         OctreeRegular octreeReg =
             new OctreeRegular(
                 new Vector3(-sphereRadius, -sphereRadius, -sphereRadius) + sphereCenter,
@@ -283,41 +263,30 @@ public class VolumicSphere : MonoBehaviour
         DrawCube(octreeReg.root, precision, onlySecant);
     }
 
-    void DrawCube(Cube node, float precision, bool onlySecant)
-    {
-        if (node.isLeaf)
-        {
-            if (onlySecant)
-            {
-                if (!node.isFull && node.isSecante)
-                {
+    void DrawCube(Cube node, float precision, bool onlySecant) {
+        if (node.isLeaf) {
+            if (onlySecant) {
+                if (!node.isFull && node.isSecante) {
+                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    cube.transform.position = node.GetCenterCube();
+                    cube.transform.localScale = new Vector3(precision, precision, precision);
+                }
+            } else {
+                if (node.isFull || node.isSecante) {
                     GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cube.transform.position = node.GetCenterCube();
                     cube.transform.localScale = new Vector3(precision, precision, precision);
                 }
             }
-            else
-            {
-                if (node.isFull || node.isSecante)
-                {
-                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    cube.transform.position = node.GetCenterCube();
-                    cube.transform.localScale = new Vector3(precision, precision, precision);
-                }
-            }
-        }
-        else
-        {
-            foreach (Cube child in node.children)
-            {
+        } else {
+            foreach (Cube child in node.children) {
                 DrawCube(child, precision, onlySecant);
             }
         }
 
     }
 
-    class Cube
-    {
+    class Cube {
         public int level = 0;
         public Vector3 min;
         public Vector3 max;
@@ -326,8 +295,7 @@ public class VolumicSphere : MonoBehaviour
         public bool isFull;
         public bool isLeaf;
 
-        public Cube(Vector3 min, Vector3 max, bool isFull, bool isSecante, bool isLeaf)
-        {
+        public Cube(Vector3 min, Vector3 max, bool isFull, bool isSecante, bool isLeaf) {
             children = new List<Cube>();
             this.min = min;
             this.max = max;
@@ -336,29 +304,24 @@ public class VolumicSphere : MonoBehaviour
             this.isLeaf = isLeaf;
         }
 
-        public Vector3 GetCenterCube()
-        {
+        public Vector3 GetCenterCube() {
             return new Vector3((max.x + min.x) / 2, (max.y + min.y) / 2, (max.z + min.z) / 2);
         }
 
-        public Vector3 GetCenterOfSphere(float radius)
-        {
+        public Vector3 GetCenterOfSphere(float radius) {
 
             return new Vector3((max.x + min.x) / 2, (max.y + min.y) / 2, (max.z + min.z) / 2);
         }
 
-        public float Distance(Vector3 a, Vector3 b)
-        {
+        public float Distance(Vector3 a, Vector3 b) {
             return MathF.Sqrt(MathF.Pow(a.x - b.x, 2) + MathF.Pow(a.y - b.y, 2) + MathF.Pow(a.z - b.z, 2));
         }
 
-        public float CalculateSideSize()
-        {
+        public float CalculateSideSize() {
             return Distance(min, max) / MathF.Sqrt(3);
         }
 
-        public bool IsInSphere(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius)
-        {
+        public bool IsInSphere(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius) {
             // Half the side length of the cube
             float halfSideLength = cubeSideLength / 2;
 
@@ -374,16 +337,14 @@ public class VolumicSphere : MonoBehaviour
             vertices[7] = new Vector3(cubeCenter.x + halfSideLength, cubeCenter.y + halfSideLength, cubeCenter.z + halfSideLength);
 
             // Check if all vertices are inside the sphere
-            foreach (Vector3 vertex in vertices)
-            {
+            foreach (Vector3 vertex in vertices) {
                 // Calculate the distance from the sphere center to the vertex
                 float distanceSquared = (vertex.x - sphereCenter.x) * (vertex.x - sphereCenter.x)
                                       + (vertex.y - sphereCenter.y) * (vertex.y - sphereCenter.y)
                                       + (vertex.z - sphereCenter.z) * (vertex.z - sphereCenter.z);
 
                 // If any vertex is outside the sphere, return false
-                if (distanceSquared > sphereRadius * sphereRadius)
-                {
+                if (distanceSquared > sphereRadius * sphereRadius) {
                     return false;
                 }
             }
@@ -392,8 +353,7 @@ public class VolumicSphere : MonoBehaviour
             return true;
         }
 
-        public bool IsSecante(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius)
-        {
+        public bool IsSecante(Vector3 cubeCenter, float cubeSideLength, Vector3 sphereCenter, float sphereRadius) {
             // Half the side length of the cube
             float halfSideLength = cubeSideLength / 2;
 
@@ -412,43 +372,35 @@ public class VolumicSphere : MonoBehaviour
         }
 
         // To compare cubes based on their centers
-        public override bool Equals(object obj)
-        {
-            if (obj is Cube otherCube)
-            {
+        public override bool Equals(object obj) {
+            if (obj is Cube otherCube) {
                 Vector3 center1 = GetCenterCube();
                 Vector3 center2 = otherCube.GetCenterCube();
                 if (
                     Mathf.Abs(center1.x - center2.x) < 0.0001f &&
                     Mathf.Abs(center1.y - center2.y) < 0.0001f &&
                     Mathf.Abs(center1.z - center2.z) < 0.0001f
-                )
-                {
-                    UnityEngine.Debug.Log("Equals");
+                ) {
                     return true;
                 }
             }
-            UnityEngine.Debug.Log("Not Equals");
             return false;
         }
 
-        public override int GetHashCode()
-        {
+        public override int GetHashCode() {
             return GetCenterCube().GetHashCode();
         }
     }
 
 
-    class OctreeRegular
-    {
+    class OctreeRegular {
         public Cube root;
         public bool precisionDone;
         public float sphereRadius;
         public Vector3 sphereCenter;
         public float precision;
 
-        public OctreeRegular(Vector3 min, Vector3 max, float sphereRadius, float precision, Vector3 sphereCenter)
-        {
+        public OctreeRegular(Vector3 min, Vector3 max, float sphereRadius, float precision, Vector3 sphereCenter) {
             this.root = new Cube(min, max, true, true, true);
             this.precisionDone = false;
             this.sphereRadius = sphereRadius;
@@ -456,17 +408,13 @@ public class VolumicSphere : MonoBehaviour
             this.sphereCenter = sphereCenter;
         }
 
-        public void CalculateNodes(Cube node)
-        {
+        public void CalculateNodes(Cube node) {
             node.isFull = node.IsInSphere(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
             node.isSecante = node.IsSecante(node.GetCenterCube(), precision, sphereCenter, sphereRadius);
 
-            if (node.CalculateSideSize() <= precision)
-            {
+            if (node.CalculateSideSize() <= precision) {
                 node.isLeaf = true;
-            }
-            else
-            {
+            } else {
                 node.isLeaf = false;
 
                 //divide into 8 children
@@ -504,8 +452,7 @@ public class VolumicSphere : MonoBehaviour
                     , false, false, false)
                 );
 
-                foreach (Cube child in node.children)
-                {
+                foreach (Cube child in node.children) {
                     CalculateNodes(child);
                 }
             }

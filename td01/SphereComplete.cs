@@ -11,12 +11,20 @@ using UnityEngine.UIElements;
 using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 using static UnityEditor.Progress;
 
-public class SphereComplete : MonoBehaviour
-{
+public class SphereComplete : MonoBehaviour {
+    // Start is called before the first frame update
     // Start is called before the first frame update
 
-    void Start()
-    {
+    public float radius;
+    public float getRadius() {
+        return radius;
+    }
+
+    public Vector3 getSphereCenter() {
+        return gameObject.transform.position;
+    }
+
+    void Start() {
         // Init Mesh components
         gameObject.GetComponent<MeshRenderer>();
         Mesh mesh = GetComponent<MeshFilter>().mesh;
@@ -36,24 +44,24 @@ public class SphereComplete : MonoBehaviour
         List<int> listTriangles = new List<int>();
 
         // Top pole
-        vertices[0] = new Vector3(0, 1, 0);
+        vertices[0] = new Vector3(0, radius, 0);
 
-        int count = 1; 
+        int count = 1;
         // Generate vertices for each parallel
         for (int i = 0; i < parallels - 1; i++) {
             float phi = MathF.PI * (i + 1) / parallels;
             for (int j = 0; j < meridians; j++) {
                 float theta = 2 * MathF.PI * j / meridians;
-                float x = MathF.Sin(phi) * MathF.Cos(theta);
-                float y = MathF.Cos(phi);
-                float z = MathF.Sin(phi) * MathF.Sin(theta);
+                float x = MathF.Sin(phi) * MathF.Cos(theta) * radius;
+                float y = MathF.Cos(phi) * radius;
+                float z = MathF.Sin(phi) * MathF.Sin(theta) * radius;
                 vertices[count] = new Vector3(x, y, z);
                 count++;
             }
         }
 
         // Bottom pole
-        vertices[vertices.Length - 1] = new Vector3(0, -1, 0);
+        vertices[vertices.Length - 1] = new Vector3(0, -radius, 0);
 
         // Top pole triangles
         for (int i = 0; i < meridians; i++) {
@@ -71,14 +79,14 @@ public class SphereComplete : MonoBehaviour
                 int belowNext = (j + 1) % meridians + (i + 1) * meridians + 1;
 
                 // First triangle
-                listTriangles.Add(current);
-                listTriangles.Add(next);
                 listTriangles.Add(below);
+                listTriangles.Add(next);
+                listTriangles.Add(current);
 
                 // Second triangle
-                listTriangles.Add(next);
-                listTriangles.Add(belowNext);
                 listTriangles.Add(below);
+                listTriangles.Add(belowNext);
+                listTriangles.Add(next);
             }
         }
 
@@ -91,8 +99,8 @@ public class SphereComplete : MonoBehaviour
 
         return (vertices, listTriangles);
     }
-    
-    
+
+
     /*
         // Update is called once per frame
         void Update()
