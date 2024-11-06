@@ -29,7 +29,20 @@ public class Buddha : MonoBehaviour
         float radius = buddha.Item4;
 
         Debug.Log("Radius : " + radius);
-        MeshVox(0.02f, radius, mesh.vertices);
+        List<Cube> cubeGrid = MeshVox(0.12f, radius, mesh.vertices);
+        foreach(Cube cube in cubeGrid)
+        {
+            Vector3 averagePoint = Vector3.zero;
+            foreach (Vector3 point in cube.verticesInside)
+            {
+                averagePoint += point;
+            }
+            averagePoint /= cube.verticesInside.Count;
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.GetComponent<Renderer>().material.color = Color.red;
+            sphere.transform.position = averagePoint;
+            sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+        }
 
 
         // Save the mesh
@@ -196,7 +209,7 @@ public class Buddha : MonoBehaviour
         return (vertices, listTriangles, normalizedNormals, maxDistance);
     }
 
-    void MeshVox(float precision, float radius, Vector3[] vertices)
+    List<Cube> MeshVox(float precision, float radius, Vector3[] vertices)
     {
         OctreeRegularForSurface octreeReg =
             new OctreeRegularForSurface(
@@ -207,11 +220,13 @@ public class Buddha : MonoBehaviour
 
         // lvl 0
         octreeReg.CalculateNodes(octreeReg.root);
-        DrawCube(octreeReg.root, precision / 2, true);
+        //DrawCube(octreeReg.root, precision / 2, true);
+        return GetCubes(octreeReg.root, precision / 2, true);
     }
 
-    void DrawCube(Cube node, float precision, bool onlySecant)
+    List<Cube> GetCubes(Cube node, float precision, bool onlySecant)
     {
+        List<Cube> secantCubes = new List<Cube>();
         if (node.isLeaf)
         {
             if (onlySecant)
@@ -219,18 +234,20 @@ public class Buddha : MonoBehaviour
                 //if (!node.isFull && node.isSecante)
                 if (node.isSecante)
                 {
-                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    cube.transform.position = node.GetCenterCube();
-                    cube.transform.localScale = new Vector3(precision, precision, precision);
+                    secantCubes.Add(node);
+                    //GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    //cube.transform.position = node.GetCenterCube();
+                    //cube.transform.localScale = new Vector3(precision, precision, precision);
                 }
             }
             else
             {
                 if (node.isFull || node.isSecante)
                 {
-                    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    cube.transform.position = node.GetCenterCube();
-                    cube.transform.localScale = new Vector3(precision, precision, precision);
+                    secantCubes.Add(node);
+                    //GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    //cube.transform.position = node.GetCenterCube();
+                    //cube.transform.localScale = new Vector3(precision, precision, precision);
                 }
             }
         }
@@ -238,9 +255,11 @@ public class Buddha : MonoBehaviour
         {
             foreach (Cube child in node.children)
             {
-                DrawCube(child, precision, onlySecant);
+                secantCubes.AddRange(GetCubes(child, precision, onlySecant));
+                //DrawCube(child, precision, onlySecant);
             }
         }
+        return secantCubes;
     }
 
     class Cube
@@ -257,6 +276,7 @@ public class Buddha : MonoBehaviour
         public Cube(Vector3 min, Vector3 max, bool isFull, bool isSecante, bool isLeaf)
         {
             children = new List<Cube>();
+            verticesInside = new List<Vector3>();
             this.min = min;
             this.max = max;
             this.isFull = isFull;
@@ -287,8 +307,10 @@ public class Buddha : MonoBehaviour
 
         public bool IsSecante(Vector3 cubeCenter, float cubeSideLength, Vector3[] verticesList)
         {
+            Debug.Log(cubeSideLength);
             bool isSec = false;
             // Check if any of the vertices is in the cube
+            Debug.Log(verticesInside.Count);
             foreach (Vector3 vertex in verticesList)
             {
                 // Check if the vertex is in the cube
@@ -401,10 +423,6 @@ public class Buddha : MonoBehaviour
             }
         }
     }
-
-
-
-
 
 
     // Update is called once per frame
