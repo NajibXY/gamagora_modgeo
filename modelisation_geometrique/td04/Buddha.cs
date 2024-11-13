@@ -23,14 +23,23 @@ public class Buddha : MonoBehaviour
 
         var buddha = LoadPath("Assets/Mesh/" + name);
 
-        mesh.vertices = buddha.Item1;
-        mesh.triangles = buddha.Item2.ToArray();
-        mesh.normals = buddha.Item3.ToArray();
+        //mesh.vertices = buddha.Item1;
+        //mesh.triangles = buddha.Item2.ToArray();
+        //mesh.normals = buddha.Item3.ToArray();
+        Debug.Log("Size old vertice : " + buddha.Item1.Length);
+        Debug.Log("Size old triangles : " + buddha.Item2.Count);
+
         float radius = buddha.Item4;
 
-        Debug.Log("Radius : " + radius);
-        List<Cube> cubeGrid = MeshVox(0.12f, radius, mesh.vertices);
-        foreach(Cube cube in cubeGrid)
+        //Debug.Log("Radius : " + radius);
+        //List<Cube> cubeGrid = MeshVox(0.25f, radius, buddha.Item1);
+        List<Cube> cubeGrid = MeshVox(0.06f, radius, buddha.Item1);
+        //List<Cube> cubeGrid = MeshVox(0.3f, radius, buddha.Item1);
+
+        Dictionary<Vector3, Vector3> correspondances = new Dictionary<Vector3, Vector3>();
+
+        List<Vector3> newVertices = new List<Vector3>();
+        foreach (Cube cube in cubeGrid)
         {
             Vector3 averagePoint = Vector3.zero;
             foreach (Vector3 point in cube.verticesInside)
@@ -42,7 +51,76 @@ public class Buddha : MonoBehaviour
             sphere.GetComponent<Renderer>().material.color = Color.red;
             sphere.transform.position = averagePoint;
             sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+
+            foreach (Vector3 point in cube.verticesInside)
+            {
+                if (!correspondances.ContainsKey(point))
+                {
+                    correspondances.Add(point, averagePoint);
+                }
+            }
+
+            newVertices.Add(averagePoint);
         }
+        Debug.Log("Size correspondances : " + correspondances.Count);
+        Debug.Log("Size new vertices : " + newVertices.Count);
+
+        List<int> newTrianglesIndexes = new List<int>();
+
+        foreach (int indexVertice in buddha.Item2)
+        {
+            newTrianglesIndexes.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice]]));
+        }
+
+        List<int> newNewTriangles = new List<int>();
+        int indexLoop = 0;
+        while (indexLoop < newTrianglesIndexes.Count - 2)
+        {
+            int indexVertice1 = newTrianglesIndexes[indexLoop];
+            int indexVertice2 = newTrianglesIndexes[indexLoop + 1];
+            int indexVertice3 = newTrianglesIndexes[indexLoop + 2];
+            if (indexVertice1 == indexVertice2
+                || indexVertice2 == indexVertice3
+                || indexVertice3 == indexVertice1)
+            {
+            }
+            else { 
+                newNewTriangles.Add(indexVertice1);
+                newNewTriangles.Add(indexVertice2);
+                newNewTriangles.Add(indexVertice3);
+            }
+            indexLoop += 3;
+        }
+
+        //int indexLoop = 0;
+
+        //while (indexLoop < buddha.Item2.Count - 2)
+        //{
+        //    int indexVertice1 = buddha.Item2[indexLoop];
+        //    int indexVertice2 = buddha.Item2[indexLoop + 1];
+        //    int indexVertice3 = buddha.Item2[indexLoop + 2];
+        //    if (newVertices.IndexOf(correspondances[buddha.Item1[indexVertice1]]) == newVertices.IndexOf(correspondances[buddha.Item1[indexVertice2]])
+        //        || newVertices.IndexOf(correspondances[buddha.Item1[indexVertice1]]) == newVertices.IndexOf(correspondances[buddha.Item1[indexVertice3]])
+        //        || newVertices.IndexOf(correspondances[buddha.Item1[indexVertice3]]) == newVertices.IndexOf(correspondances[buddha.Item1[indexVertice2]]))
+        //    {
+        //        newTriangles.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice1]]));
+        //    }
+        //    else {
+        //        newTriangles.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice1]]));
+        //        newTriangles.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice2]]));
+        //        newTriangles.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice3]]));
+        //    }
+        //    indexLoop += 3;
+        //}
+        //foreach (int indexVertice in buddha.Item2)
+        //{
+        //    newTriangles.Add(newVertices.IndexOf(correspondances[buddha.Item1[indexVertice]]));
+        //}
+        Debug.Log("Size new triangles : " + newNewTriangles.Count);
+
+        mesh.vertices = newVertices.ToArray();
+        mesh.triangles = newNewTriangles.ToArray();
+        mesh.RecalculateNormals();
 
 
         // Save the mesh
@@ -307,10 +385,10 @@ public class Buddha : MonoBehaviour
 
         public bool IsSecante(Vector3 cubeCenter, float cubeSideLength, Vector3[] verticesList)
         {
-            Debug.Log(cubeSideLength);
+            //Debug.Log(cubeSideLength);
             bool isSec = false;
             // Check if any of the vertices is in the cube
-            Debug.Log(verticesInside.Count);
+            //Debug.Log(verticesInside.Count);
             foreach (Vector3 vertex in verticesList)
             {
                 // Check if the vertex is in the cube
