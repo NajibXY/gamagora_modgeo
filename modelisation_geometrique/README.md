@@ -80,3 +80,14 @@
 <img src="https://github.com/NajibXY/gamagora_modgeo/blob/5a949a701c26a1dc99ae29b88e9d5a6b01f2d25f/modelisation_geometrique/img/buddha_write.png" width="600">
 
 
+# TP 3
+
+## Octree Régulier
+
+- Le script VolumicSphere permet de découper une sphère en voxels suivant la méthode des Octree réguliers.
+</br>
+Il prend plusieurs paramètres :
+- Precision:float définissant la longueur ciblée des voxels (opposé à l'approche classique du nombre de subdivision de l'octree)
+- Radius:float définissant le rayon de la sphère "octreesée"
+- Only Secant:boolean définissant si l'on affiche que les voxels sécants ou tous les voxels de l'octree
+
